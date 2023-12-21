@@ -1,0 +1,200 @@
+- name: Create User on hadoop Server
+  hosts: localhost
+  connection: local
+  become: yes
+  vars:
+       user_name: hadoop
+       user_shell: /bin/bash
+       user_home: /home/{{ user_name }}
+       user_pass: "{{ 'prueba1234' | password_hash('sha512') }}"
+  tasks:
+   - name: Remove the user hadoop
+     user:
+       name: "{{ user_name }}"
+       state: absent
+       remove: yes
+   - name: Create a 2048-bit SSH key for user hadoop
+     user:
+       name: "{{ user_name }}"
+       generate_ssh_key: yes
+       ssh_key_bits: 4096
+       ssh_key_file: .ssh/id_rsa
+       shell: "{{ user_shell }}"
+       home: "{{ user_home }}"
+       password: "{{ user_pass }}"
+   - name: Add User to AllowUsers
+     lineinfile:
+       dest: "/etc/ssh/sshd_config"
+       regexp: '^AllowUsers'
+       line: 'AllowUsers adminstic soporteiaas usuario ansible {{ user_name }}'
+   - name: Restart SSH
+     service:
+       name: sshd
+       state: restarted
+   - name: Sudoers Hadoop User
+     copy:
+       dest: "/etc/sudoers.d/{{ user_name }}"
+       content: "{{ user_name }} ALL=(ALL) NOPASSWD: ALL"
+
+- name: Create User on hadoop Server
+  hosts: hadoopgrp
+  become: yes
+  vars:
+       user_name: hadoop
+       user_shell: /bin/bash
+       user_home: /home/{{ user_name }}
+       user_pass: "{{ 'prueba1234' | password_hash('sha512') }}"
+  tasks:
+   - name: Remove the user hadoop
+     user:
+       name: "{{ user_name }}"
+       state: absent
+       remove: yes
+   - name: Create a 2048-bit SSH key for user hadoop
+     user:
+       name: "{{ user_name }}"
+       generate_ssh_key: yes
+       ssh_key_bits: 4096
+       ssh_key_file: .ssh/id_rsa
+       shell: "{{ user_shell }}"
+       home: "{{ user_home }}"
+       password: "{{ user_pass }}"
+   - name: Add User to AllowUsers
+     lineinfile:
+       dest: "/etc/ssh/sshd_config"
+       regexp: '^AllowUsers'
+       line: 'AllowUsers adminstic soporteiaas usuario ansible {{ user_name }}'
+   - name: Restart SSH
+     service:
+       name: sshd
+       state: restarted
+   - name: Sudoers Hadoop User
+     copy:
+       dest: "/etc/sudoers.d/{{ user_name }}"
+       content: "{{ user_name }} ALL=(ALL) NOPASSWD: ALL"
+
+- name: Create User on Hadoop machines
+  hosts: workersgrp
+  become: true
+  vars:
+       user_name: hadoop
+       user_shell: /bin/bash
+       user_home: /home/{{ user_name }}
+       user_pass: "{{ 'prueba1234' | password_hash('sha512') }}"
+  tasks:
+   - name: Remove the user hadoop
+     user:
+       name: "{{ user_name }}"
+       state: absent
+       remove: yes
+   - name: Create a User
+     user:
+       name: "{{ user_name }}"
+       shell: "{{ user_shell }}"
+       home: "{{ user_home }}"
+       password: "{{ user_pass }}"
+   - name: Add User to AllowUsers
+     lineinfile:
+       dest: "/etc/ssh/sshd_config"
+       regexp: '^AllowUsers'
+       line: 'AllowUsers adminstic soporteiaas usuario ansible {{ user_name }}'
+   - name: Restart SSH
+     service:
+       name: sshd
+       state: restarted
+   - name: Sudoers Hadoop User
+     copy:
+       dest: "/etc/sudoers.d/{{ user_name }}"
+       content: "{{ user_name }} ALL=(ALL) NOPASSWD: ALL"
+
+- name: Fetch public key from hadoop
+  hosts: localhost
+  become: true
+  vars:
+       user_name: hadoop
+       user_home: /home/{{ user_name }}
+  tasks:
+    - name: Copy public key
+      fetch:
+        src: "{{ user_home }}/.ssh/id_rsa.pub"
+        dest: "~/hadoop.pub"
+        flat: true
+
+- name: Fetch public key from hadoop server
+  hosts: hadoopgrp
+  become: true
+  vars:
+       user_name: hadoop
+       user_home: /home/{{ user_name }}
+  tasks:
+    - name: Copy public key
+      fetch:
+        src: "{{ user_home }}/.ssh/id_rsa.pub"
+        dest: "~/hadoop-server.pub"
+        flat: true
+
+- name: Set public key of hadoop server on workers
+  hosts: all
+  become: true
+  vars:
+       user_name: hadoop
+       user_home: /home/{{ user_name }}
+  tasks:
+  - name: Set authorized key taken from file
+    authorized_key:
+      user: "{{ user_name }}"
+      state: present
+      key: "{{ lookup('file', '~/hadoop-server.pub') }}"
+  - name: Restart SSH
+    service:
+      name: sshd
+      state: restarted
+
+- name: Set public key of hadoop on all
+  hosts: all
+  become: true
+  vars:
+       user_name: hadoop
+       user_home: /home/{{ user_name }}
+  tasks:
+  - name: Set authorized key taken from file
+    authorized_key:
+      user: "{{ user_name }}"
+      state: present
+      key: "{{ lookup('file', '~/hadoop.pub') }}"
+  - name: Set authorized key taken from file
+    authorized_key:
+      user: "ansible"
+      state: present
+      key: "{{ lookup('file', '~/hadoop.pub') }}"
+  - name: Set authorized key taken from file
+    authorized_key:
+      user: "ansible"
+      state: present
+      key: "{{ lookup('file', '~/hadoop-server.pub') }}"
+  - name: Restart SSH
+    service:
+      name: sshd
+      state: restarted
+
+- name: Set public key
+  hosts: localhost
+  become: true
+  vars:
+       user_name: hadoop
+       user_home: /home/{{ user_name }}
+  tasks:
+  - name: Set authorized key taken from file
+    authorized_key:
+      user: "{{ user_name }}"
+      state: present
+      key: "{{ lookup('file', '~/hadoop-server.pub') }}"
+  - name: Set authorized key taken from file
+    authorized_key:
+      user: "ansible"
+      state: present
+      key: "{{ lookup('file', '~/hadoop-server.pub') }}"
+  - name: Restart SSH
+    service:
+      name: sshd
+      state: restarted

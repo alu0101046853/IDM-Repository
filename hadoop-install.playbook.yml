@@ -1,0 +1,33 @@
+- name: Instal Java
+  hosts: all
+  become: true
+  remote_user: hadoop
+  tasks:
+  - name: Run the equivalent of "apt-get update" as a separate step
+    apt:
+      update_cache: yes
+  - name: Install default-jdk
+    apt:
+      name: default-jdk
+      state: present
+ 
+- name: Instal Hadoop
+  hosts: all
+  remote_user: hadoop
+  tasks:
+  - name: Get Hadoop
+    get_url:
+      url: https://dlcdn.apache.org/hadoop/common/hadoop-3.3.6/hadoop-3.3.6.tar.gz
+      dest: /home/hadoop/
+      force: no
+  - name: Unzip
+    unarchive:
+      src: /home/hadoop/hadoop-3.3.6.tar.gz
+      dest: /home/hadoop
+      remote_src: yes
+  - name: Move hadoop folder
+    copy:
+      src: /home/hadoop/hadoop-3.3.6/
+      dest: /home/hadoop/hadoop
+      remote_src: yes
+

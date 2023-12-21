@@ -1,0 +1,16 @@
+- name: Hadoop Configuration
+  hosts: all
+  remote_user: hadoop
+  vars:
+       user_name: hadoop
+       hadoop_home: /home/{{ user_name }}/hadoop/etc/hadoop
+       hadoop_conf: /home/hadoop/hadoop-conf-files
+  tasks:
+    - name: Copy core-site.xml to machines
+      copy:
+        src: "{{ hadoop_conf }}/mapred-site.xml"
+        dest: "{{ hadoop_home }}/mapred-site.xml"
+    - name: Copy hdfs-site.xml to machines
+      copy:
+        src: "{{ hadoop_conf }}/yarn-site.xml"
+        dest: "{{ hadoop_home }}/yarn-site.xml"

@@ -1,0 +1,20 @@
+- name: Set environment variables
+  hosts: all
+  remote_user: hadoop
+  tasks:
+  - name: Set Java Home
+    lineinfile:
+      path: "/home/hadoop/hadoop/etc/hadoop/hadoop-env.sh"
+      line: export JAVA_HOME=/usr/lib/jvm/java-11-openjdk-amd64/
+  - name: Set Java Home on Enviroment
+    become: true
+    lineinfile:
+      path: "/etc/environment"
+      line: JAVA_HOME="/usr/lib/jvm/java-11-openjdk-amd64"
+  - name: Set hadoop home and hadoop shell
+    lineinfile:
+      path: "/home/hadoop/.bashrc"
+      line: |
+        export HADOOP_HOME=$HOME/hadoop
+        export PATH=${PATH}:${HADOOP_HOME}/bin:${HADOOP_HOME}/sbin
+

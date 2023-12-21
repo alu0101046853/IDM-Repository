@@ -1,0 +1,7 @@
+[workersgrp]
+worker1
+worker2
+
+[hadoopgrp]
+master
+

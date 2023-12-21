@@ -1,0 +1,54 @@
+- name: Hadoop Configuration
+  hosts: all
+  remote_user: hadoop
+  vars:
+       user_name: hadoop
+       hadoop_home: /home/{{ user_name }}/hadoop/etc/hadoop
+       hadoop_conf: /home/hadoop/hadoop-conf-files
+  tasks:
+    - name: Copy core-site.xml to machines
+      copy:
+        src: "{{ hadoop_conf }}/core-site.xml"
+        dest: "{{ hadoop_home }}/core-site.xml"
+    - name: Copy hdfs-site.xml to machines
+      copy:
+        src: "{{ hadoop_conf }}/hdfs-site.xml"
+        dest: "{{ hadoop_home }}/hdfs-site.xml"
+
+- name: Create directory
+  hosts: hadoopgrp
+  remote_user: hadoop
+  vars:
+       user_name: hadoop
+       hadoop_home: /home/{{ user_name }}/data
+  tasks:
+    - name: Create directory nameNode
+      file:
+        path: "{{ hadoop_home }}/nameNode"
+        state: directory
+
+- name: Create directory
+  hosts: workersgrp
+  remote_user: hadoop
+  vars:
+       user_name: hadoop
+       hadoop_home: /home/{{ user_name }}/data
+  tasks:
+    - name: Create directory dataNode
+      file:
+        path: "{{ hadoop_home }}/dataNode"
+        state: directory
+
+- name: Set workers on worker file
+  hosts: all
+  remote_user: hadoop
+  vars:
+       user_name: hadoop
+       worker_file: /home/{{ user_name }}/hadoop/etc/hadoop/workers
+  tasks:  
+    - name: Creating a file with content
+      copy:
+        dest: "{{ worker_file }}"
+        content: |
+          worker1
+          worker2
