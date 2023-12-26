@@ -1,7 +1,8 @@
 [workersgrp]
-worker1
-worker2
+worker1-final
+worker2-final
+worker3-final
 
 [hadoopgrp]
-master
+master-final
 

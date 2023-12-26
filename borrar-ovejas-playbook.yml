@@ -1,0 +1,38 @@
+---
+- name: Borrando MVs.
+  hosts: localhost
+  gather_facts: false
+
+  vars_files:
+    - alu0101680965ull.yaml
+  vars:
+
+    # MVs con el prefijo de la asignatura
+    prefix: ID
+    nodes:
+      - name: master-final
+      - name: worker1-final
+      - name: worker2-final
+      - name: worker3-final
+
+  tasks:
+    - name: Login to IaaS
+      ovirt_auth:
+        url: https://iaas.ull.es/ovirt-engine/api
+        insecure: yes
+        username: alu0101680965@ULL
+        password: "{{ ovirt_password }}"
+        headers:
+          filter: true
+
+    - name: Stop and Remove a VM
+      ovirt_vm:
+        auth: "{{ ovirt_auth }}"
+        name: "{{ prefix }}-{{ item.name }}"
+        state: absent
+      with_items: "{{ nodes }}"
+    
+    - name: Cleanup IaaS auth token
+      ovirt_auth:
+        ovirt_auth: "{{ ovirt_auth }}"
+        state: absent

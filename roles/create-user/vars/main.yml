@@ -1,0 +1,5 @@
+---
+# vars file for create-user
+user_shell: /bin/bash
+user_home: /home/{{ user_name }}
+user_pass: "{{ 'prueba1234' | password_hash('sha512') }}"

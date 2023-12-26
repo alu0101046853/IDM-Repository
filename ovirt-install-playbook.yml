@@ -1,0 +1,14 @@
+- name: Instal Java
+  hosts: localhost
+  connection: local
+  become: true
+  tasks:
+  - name: Install pip, python3-pycurl, libxml2-dev
+    apt:
+      pkg:
+        - pip
+        - python3-pycurl
+        - libxml2-dev
+  - name: Install Ovirt
+    pip:
+      name: ovirt-engine-sdk-python

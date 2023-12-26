@@ -1,0 +1,12 @@
+- name: Set Hostnames
+  hosts: all
+  become: true
+  tasks:
+  - name: Set Hosts on /etc/hosts
+    lineinfile:
+      path: "/etc/hosts"
+      line: |
+        192.168.16.20 master-final datanode
+        192.168.16.21 worker1-final
+        192.168.16.22 worker2-final
+        192.168.16.23 worker3-final

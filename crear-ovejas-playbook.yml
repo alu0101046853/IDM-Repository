@@ -1,0 +1,118 @@
+# Playbook para creación desatendida de MVs ubuntu22.04 en IAAS
+# 
+#
+# Usage:
+#    ansible-playbook --ask-vault IpDM-creacion-MVs-ubuntu22.04-ip_estaticas.yaml
+#
+---
+- name: Creando MVs ubuntu22.04
+  hosts: localhost
+  gather_facts: false
+
+# Variables
+# --
+
+# archivo encriptado con ansible-vault que contiene la variable
+# {{ ovirt_password }} con la clave para acceder al IaaS ULL
+
+  vars_files:
+    - alu0101680965ull.yaml
+
+# Clave SSH para el usuario ansible (usen la que generaron en 
+# la MV control (ficheros id_rsa.pub)
+
+  vars:
+    ssh_keys: ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQCacMjZx24ak1ll4pspxCQWo+klnv2+0ZSvarabEXlxKFmomVwXFQSBi3AoCU2gZcUrNlk6gar3Vz9bTh18AXXsqmDKyPO+XsowhAZ/KMwZcl/1WiQCS2gm3pGIV/10ghvLnNQAoo7D20Xkd+JdwFDUCwJKVQSNiKAxT8C0Byv0NFPF5f3hyp6WTRcliCX59LzX4zcDLM+o99ktQ+ms9Riezn/9GLHVlXHpPBeHgxexcqY9b3Ctqkv2uoPMRORlfVZAhrtF3b7Xdd5BT/dcE8KrWQ6r7SlLvRrCyHUziUTVbZ6XE+vuYjsOoHZJ3BpycpJHcZaK/uSxXhW8XJ35nDwhu1mlO2+6s7cQIb/QgxT2/d+AtjQNLSaFJvuGsb6zPcfbIdO6Oxkd+W+13PvX20FhF3JBg17m0FCkiQYBuuUgDxv8yXwYq5sF1jJrCTU6vWRbFVfJ8jSq+ocEEC/mjih2YztoS8Kk6bVhQaigoTqecenyDXpF7IHq8Ua3rdLRUvk= ansible@ubuntu
+
+# Usuario IaaS (cambiar xxxxx por aluxxx...)
+
+    ovirt_login: alu0101680965@ULL
+
+# Nodos a crear (en este caso dos ovejas. Actualizar el prefijo, el nombre de la MV y las direcciones IPs)
+
+    prefix: ID
+    nodes:
+      - name: master-final
+        ip: 192.168.16.20
+      - name: worker1-final
+        ip: 192.168.16.21
+      - name: worker2-final
+        ip: 192.168.16.22
+      - name: worker3-final
+        ip: 192.168.16.23
+
+# Especifiquen aqui el perfil de la red privada
+# que tienen asignada. En lugar de DOCINT1, poner la red donde se va a "enchufar" la MV
+    node_nics:
+      - name: nic2
+        profile_name: DOCP2P-4006
+
+# Tareas
+# ------
+
+  tasks:
+    - name: Login to IaaS
+      ovirt_auth:
+        url: https://iaas.ull.es/ovirt-engine/api
+        insecure: yes
+        username: "{{ ovirt_login }}"
+        password: "{{ ovirt_password }}"
+        headers:
+          filter: true
+
+    - name: Create a VM
+      ovirt_vm:
+        auth: "{{ ovirt_auth }}"
+        cluster: Cluster-Rojo
+        name: "{{ prefix }}-{{ item.name }}"
+        cpu_cores: 1
+        cpu_sockets: 1
+        memory: 2GiB
+        template: ubuntu-2204-sinred-cloudinit
+        nics: "{{ node_nics }}"
+        state: present
+        wait: yes
+      with_items: "{{ nodes }}"
+
+    - name: Update VM via cloud-init
+      ovirt_vm:
+        auth: "{{ ovirt_auth }}"
+        name: "{{ prefix }}-{{ item.name }}"
+        state: running
+        cloud_init:
+          dns_servers: '10.4.9.29 10.4.9.30'
+          host_name: "{{ item.name }}"
+          user_name: ansible
+# Passwd generado con mkpasswd -m SHA-512 alumno2020 --> cambiar y poner el nuevo valor
+          root_password: $6$hbnKreOC0uLYPg$slPEM/vN4QbyU1Mo3tGw7BeYxBzpoSccX44I7Vc3o5T92ehZ7xaAG6Yx/EZyYTx7649BBg9gb/o5bZSoQYe4e.
+          authorized_ssh_keys: "{{ ssh_keys }}"
+          custom_script: |
+            write_files:
+              - path: /etc/sudoers.d/ansible
+                permissions: '0644'
+                content: |
+                  ansible ALL=(ALL) NOPASSWD:ALL
+              - path: /etc/netplan/01cloudinit.yaml
+                permissions: '0644'
+                content: |
+                  network:
+                    version: 2
+                    ethernets:
+                      ens3:
+                        addresses:
+                          - {{ item.ip }}/24
+                        gateway4: 192.168.16.1
+                        nameservers:
+                          addresses: [10.4.9.29, 10.4.9.30]
+            runcmd:
+              - rm /etc/netplan/00-installer-config.yaml
+              - sed -i '/AllowUsers/c\AllowUsers adminstic usuario soporteiass ansible hadoop' /etc/ssh/sshd_config
+              - systemctl restart sshd
+              - netplan apply
+        wait: yes
+      with_items: "{{ nodes }}"
+
+    - name: Cleanup IaaS auth token
+      ovirt_auth:
+        ovirt_auth: "{{ ovirt_auth }}"
+        state: absent

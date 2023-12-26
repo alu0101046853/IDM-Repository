@@ -50,5 +50,6 @@
       copy:
         dest: "{{ worker_file }}"
         content: |
-          worker1
-          worker2
+          worker1-final
+          worker2-final
+          worker3-final

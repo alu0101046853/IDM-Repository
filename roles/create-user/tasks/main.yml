@@ -1,0 +1,28 @@
+---
+# tasks file for create-user
+   - name: Remove the user {{ user_name }}
+     user:
+       name: "{{ user_name }}"
+       state: absent
+       remove: yes
+   - name: Create user {{ user_name}}
+     user:
+       name: "{{ user_name }}"
+       generate_ssh_key: yes
+       ssh_key_file: .ssh/id_rsa
+       shell: "{{ user_shell }}"
+       home: "{{ user_home }}"
+       password: "{{ user_pass }}"
+   - name: Add User {{ user_name }} to AllowUsers
+     lineinfile:
+       dest: "/etc/ssh/sshd_config"
+       regexp: '^AllowUsers'
+       line: 'AllowUsers adminstic soporteiaas usuario ansible {{ user_name }}'
+   - name: Restart SSH
+     service:
+       name: sshd
+       state: restarted
+   - name: Sudoers {{ user_name }} User
+     copy:
+       dest: "/etc/sudoers.d/{{ user_name }}"
+       content: "{{ user_name }} ALL=(ALL) NOPASSWD: ALL"
