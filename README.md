@@ -10,7 +10,7 @@ Como paso previo ejecutamos el playbook [ovirt-install](./ovirt-install-playbook
 
 Cambiamos al usuario hadoop en nuestra máquina ansible para poder ejecutar los playbooks como este usuario.
 
-- 4º: Ejecutamos el playbook de [hadoop-install](./hadoop-install.playbook.yml) para instalar hadoop y Java en las máquinas Hadoop.
+- 4º: Ejecutamos el playbook de [hadoop-install](./hadoop-install-playbook.yml) para instalar hadoop y Java en las máquinas Hadoop.
 
 - 5º: Ejecutamos el playbook de [java-configuration](./java-configuration-playbook.yml) para configurar las variables de entorno.
 
