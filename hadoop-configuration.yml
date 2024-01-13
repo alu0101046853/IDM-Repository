@@ -39,14 +39,14 @@
         path: "{{ hadoop_home }}/dataNode"
         state: directory
 
-- name: Set workers on worker file
+- name: Set workers on workers file
   hosts: all
   remote_user: hadoop
   vars:
        user_name: hadoop
        worker_file: /home/{{ user_name }}/hadoop/etc/hadoop/workers
   tasks:  
-    - name: Creating a file with content
+    - name: Setting content on workers file
       copy:
         dest: "{{ worker_file }}"
         content: |

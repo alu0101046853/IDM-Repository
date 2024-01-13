@@ -1,4 +1,4 @@
-- name: Instal Java
+- name: Instal Ovirt and dependencies
   hosts: localhost
   connection: local
   become: true
